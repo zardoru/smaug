@@ -83,8 +83,10 @@ ifStmt = do
     return $ IfExpr expr body
 
 -- maneja mas de 1 parametro mediante sepBy!
+-- paramList := expr (',' expr)*
 paramList = expression `sepBy` (lexeme ",")
-     
+
+-- call := ident '(' (paramList)? ')'
 call = do
     id <- identifier
     lparen
@@ -92,12 +94,13 @@ call = do
     rparen
     return $ FunCallExpr id exprList
 
+-- callStmt := call ';'
 callStmt = do
     fcall <- call
     semicolon
     return $ BodyCallExpr fcall 
 
--- stmt := letStmt | whileStmt | ifStmt | assnStmt
+-- stmt := letStmt | whileStmt | ifStmt | assnStmt | callStmt
 stmt = do
     statement <- try letStmt <|> 
                  try whileStmt <|> 

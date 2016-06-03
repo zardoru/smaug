@@ -4,9 +4,14 @@ import Data.List (group, sort, nub, intercalate, foldl')
 import Control.Monad (forM, foldM)
 import Data.Either
 
+type Scope = Int
+type Symbol = (Int, String)
+type SymList = [Symbol] 
+type ErrorSeq = Either SemanticRuleStatus SymList
+
 -- Symbol Table
 -- generalize into foldable prob.
-smaugCreateSymbolTable' :: Int -> BodyExpr -> [(Int, String)]
+smaugCreateSymbolTable' :: Scope -> BodyExpr -> SymList
 smaugCreateSymbolTable' scope expr =
     case expr of
         MainBody body -> concat $ fromStmtList body
@@ -20,11 +25,12 @@ smaugCreateSymbolTable' scope expr =
             nextScope = scope + 1
             fromStmtList = map (smaugCreateSymbolTable' nextScope)
 
-getDuplicateSymbolsMessage :: [(Int, String)] -> String
+getDuplicateSymbolsMessage :: SymList -> String
 getDuplicateSymbolsMessage table =
     intercalate "," duplicateTable
     where duplicateTable = map snd . map head . filter (\x -> length x > 1) . group . sort $ table
 
+noDuplicateSymbols :: BodyExpr -> SemanticRuleStatus
 noDuplicateSymbols expr =
     case nub table == table of
         True -> Ok
@@ -38,7 +44,7 @@ noDuplicateSymbols expr =
 getScopeError i s = "Variable \"" ++ i ++ 
             "\" is not declared (yet?)" ++ " in the declaration at scope " ++ show s 
 
-isInScope :: String -> [(Int, String)] -> Int -> SemanticRuleStatus
+isInScope :: String -> SymList -> Scope -> SemanticRuleStatus
 isInScope i t s = 
     case scopeCheckSuccesful of
         True -> Ok
@@ -48,7 +54,7 @@ isInScope i t s =
         symb = filter (\x -> fst x <= s && snd x == i) t
         scopeCheckSuccesful = length symb > 0
 
-hasValidReferences :: [(Int, String)] -> Int -> Expr -> SemanticRuleStatus 
+hasValidReferences :: SymList -> Scope -> Expr -> SemanticRuleStatus 
 hasValidReferences t s (Lit _) = Ok
 hasValidReferences t s (QuoteStr _) = Ok
 hasValidReferences t s (NullExpr) = Ok
@@ -57,28 +63,24 @@ hasValidReferences t s (FunCallExpr id xps) = foldl' (&^) Ok $ map (hasValidRefe
 hasValidReferences t s x = hasValidReferences t s (getExprLeft x) 
                             &^ hasValidReferences t s (getExprRight x)
 
-data SymList = SymList [(Int, String)] 
-type ErrorSeq = Either SemanticRuleStatus SymList
-
 -- Si dados los símbolos iniciales t
 -- en el ámbito s 
 -- revisar acomulativamente si las expresiónes
 -- poseen reglas de referencias válidas.
-allExprsHaveValidReferences :: SymList -> Int -> [BodyExpr] -> ErrorSeq 
+allExprsHaveValidReferences :: SymList -> Scope -> [BodyExpr] -> ErrorSeq 
 allExprsHaveValidReferences t s e = foldM foldFunc t e
     where foldFunc acc x = validReferencesWalk s x acc
 
 -- Revisa si la expresión en la declaración de la variable ident
 -- dados los simbolos t en el ámbito scope
 -- posee referencias válidas.        
-checkLet :: String -> SymList -> Int -> Expr -> ErrorSeq 
+checkLet :: String -> SymList -> Scope -> Expr -> ErrorSeq 
 checkLet ident t scope expr =
     case ref of 
-        Ok -> Right (SymList $ (scope, ident) : unr) 
+        Ok -> Right ((scope, ident) : t) 
         (SemanticError _) -> Left ref
     where 
-        ref = hasValidReferences unr scope expr
-        (SymList unr) = t
+        ref = hasValidReferences t scope expr
 
 -- Genera un ErrorSeq a partir de una lista de símbolos
 -- o un error (Equivalente a return con un tipo correcto)
@@ -91,31 +93,34 @@ wrap l s =
 -- Dado un ámbito scope, el cuerpo symexpr y los símbolos syms
 -- revisar si las referencias a variables son correctas.
 
-validReferencesWalk :: Int -> BodyExpr -> SymList -> ErrorSeq
+validReferencesWalk :: Scope -> BodyExpr -> SymList -> ErrorSeq
 validReferencesWalk scope symexpr syms = 
     case symexpr of 
         -- Generate symbol table only on the main body.
         (MainBody lexpr) -> allExprsHaveValidReferences syms nextScope lexpr
         -- And don't when we're walking into the tree.
-        (BodyCallExpr expr) -> wrap syms $ hasValidReferences unrSyms scope expr
+        (BodyCallExpr expr) -> wrap syms $ hasValidReferences syms scope expr
+        
+        -- Usamos la lista de símbolos local (syms) para
+        -- que cada bloque sea su propio ámbito en vez de
+        -- hacer que cada nivel del árbol sea un ambito global a ese nivel.
         (IfExpr expr lbexpr) -> do
             allExprsHaveValidReferences syms nextScope lbexpr 
-            wrap syms $ hasValidReferences unrSyms scope expr
+            wrap syms $ hasValidReferences syms scope expr
              
         (WhileExpr expr lbexpr) -> do
             allExprsHaveValidReferences syms nextScope lbexpr
-            wrap syms $ hasValidReferences unrSyms scope expr
+            wrap syms $ hasValidReferences syms scope expr
             
         (AssnExpr id expr) -> wrap syms $ 
-            isInScope id unrSyms scope &^ hasValidReferences unrSyms scope expr
+            isInScope id syms scope &^ hasValidReferences syms scope expr
         (LetExpr id expr) -> checkLet id syms scope expr
         _ -> error $ "Unimplemented statement for reference checking (" ++ show symexpr ++ ")"
     where
-        nextScope = scope + 1
-        (SymList unrSyms) = syms 
+        nextScope = scope + 1 
     
 -- Wrapper de estado inicial para validReferencesWalk.
-validReferences expr = validReferencesWalk 0 expr (SymList [])
+validReferences expr = validReferencesWalk 0 expr []
 
 -- Revisión de las reglas semánticas de símbolos.
 symbolTableRules expr = 
@@ -129,5 +134,5 @@ symbolTableRules expr =
                     (Right _) -> Ok  
     
 -- Creación de tabla de símbolos en base a un statement.
-smaugCreateSymbolTable :: BodyExpr -> [(Int, String)]
+smaugCreateSymbolTable :: BodyExpr -> SymList
 smaugCreateSymbolTable = smaugCreateSymbolTable' 0
