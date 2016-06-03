@@ -1,8 +1,9 @@
 module Smaug.MathEval where
-import Smaug.Parser
+import Smaug.LangADT
 import Data.Maybe
 import Data.Either
 
+-- Optimización simple (reducción de expresiones. Nothing => no optimizable.)
 mathEval :: Expr -> Maybe Double
 mathEval (Add l r) = (+) <$> mathEval l <*> mathEval r
 mathEval (Mul l r) = (*) <$> mathEval l <*> mathEval r

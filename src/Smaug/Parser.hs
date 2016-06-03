@@ -3,37 +3,7 @@
 module Smaug.Parser where
 import Text.Parsec
 import Smaug.Lexer
-
--- Sigue principios similares a WYAH
-data Expr
-    =   Add Expr Expr
-      | Mul Expr Expr
-      | Sub Expr Expr
-      | Div Expr Expr
-      | Lt Expr Expr
-      | Gt Expr Expr
-      | Leq Expr Expr
-      | Geq Expr Expr
-      | Neq Expr Expr
-      | Eq Expr Expr
-      | And Expr Expr
-      | Or Expr Expr
-      | Ident String
-      | Lit Double
-      | QuoteStr String 
-      | FunCallExpr String [Expr]
-      deriving Show
-      
-      
-data BodyExpr = 
-      LetExpr String Expr
-    | AssnExpr String Expr
-    | WhileExpr Expr [BodyExpr]
-    | IfExpr Expr [BodyExpr]
-    | ForExpr String Double Double Double [BodyExpr]
-    | BodyCallExpr Expr
-    | MainBody [BodyExpr]
-    deriving Show
+import Smaug.LangADT
 
 -- de WYAH por Stephen Diehl
 infixOp x f = do

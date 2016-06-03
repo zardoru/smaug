@@ -1,6 +1,7 @@
 module Smaug.TreeParser where
-import Smaug.Parser
-import Data.List (foldl')
+import Smaug.LangADT
+import Smaug.SemanticRules.SymbolsAndScope
+import Data.List (foldl', nub, group, sort)
 
 {-
     Mis reglas sintácticas respecto al ámbito:
@@ -12,10 +13,6 @@ import Data.List (foldl')
         
         * alt sencillo: todas las variables son globales
 -}
-
-data SemanticRuleStatus = 
-    SemanticError String | Ok
-    deriving Show
 
 -- No inequality chaining
 checkIsNotIneq :: Expr -> SemanticRuleStatus
@@ -42,24 +39,23 @@ checkNoStr :: Expr -> Expr -> SemanticRuleStatus
 checkNoStr l r = checkIsNoStr l &^ checkIsNoStr r
 
 checkExpr :: Expr -> SemanticRuleStatus
-checkExpr (Lt l r) = checkIneqExpr l r
-checkExpr (Gt l r) = checkIneqExpr l r
-checkExpr (Leq l r) = checkIneqExpr l r
-checkExpr (Geq l r) = checkIneqExpr l r
-checkExpr (Eq l r) = checkIneqExpr l r
-checkExpr (Neq l r) = checkIneqExpr l r
-checkExpr (Add l r) = checkNoStr l r 
-checkExpr (Mul l r) = checkNoStr l r
-checkExpr (Sub l r) = checkNoStr l r
-checkExpr (Div l r) = checkNoStr l r
-checkExpr (FunCallExpr id xps) = checkRulesForAllExprs xps 
-checkExpr _ = Ok
-
-(&^) :: SemanticRuleStatus -> SemanticRuleStatus -> SemanticRuleStatus
-a &^ b = 
-    case a of
-        Ok -> b
-        SemanticError x -> a 
+checkExpr (Lt l r) = checkIneqExpr l r &^ checkExpr l &^ checkExpr r
+checkExpr (Gt l r) = checkIneqExpr l r &^ checkExpr l &^ checkExpr r
+checkExpr (Leq l r) = checkIneqExpr l r &^ checkExpr l &^ checkExpr r
+checkExpr (Geq l r) = checkIneqExpr l r &^ checkExpr l &^ checkExpr r
+checkExpr (Eq l r) = checkIneqExpr l r &^ checkExpr l &^ checkExpr r
+checkExpr (Neq l r) = checkIneqExpr l r &^ checkExpr l &^ checkExpr r
+checkExpr (Add l r) = checkNoStr l r  &^ checkExpr l &^ checkExpr r
+checkExpr (Mul l r) = checkNoStr l r &^ checkExpr l &^ checkExpr r
+checkExpr (Sub l r) = checkNoStr l r &^ checkExpr l &^ checkExpr r
+checkExpr (Div l r) = checkNoStr l r &^ checkExpr l &^ checkExpr r 
+checkExpr (And l r) = checkExpr l &^ checkExpr r
+checkExpr (Or l r) = checkExpr l &^ checkExpr r
+checkExpr (FunCallExpr id xps) = checkRulesForAllExprs xps
+checkExpr (Ident _) = Ok
+checkExpr (Lit _) = Ok
+checkExpr (QuoteStr _) = Ok
+checkExpr _ = error "Unimplemented expr check"
 
 checkRulesInList :: [BodyExpr] -> SemanticRuleStatus
 checkRulesInList xprl = foldl' reduceFn startVal xprl
@@ -70,30 +66,11 @@ checkRulesForAllExprs :: [Expr] -> SemanticRuleStatus
 checkRulesForAllExprs (x:xpr) = checkExpr x &^ checkRulesForAllExprs xpr
 checkRulesForAllExprs [] = Ok
 
--- Symbol Table
--- generalize into foldable prob.
-smaugCreateSymbolTable' :: Int -> BodyExpr -> [(Int, String)]
-smaugCreateSymbolTable' scope expr =
-    case expr of
-        MainBody body -> concat $ fromStmtList body
-        IfExpr expr body -> concat $ fromStmtList body
-        WhileExpr expr body -> concat $ fromStmtList body
-        LetExpr id expr -> [(scope, id)]
-        AssnExpr id expr -> []
-        BodyCallExpr expr -> []  
-        _ -> error "Unimplemented expression for symbol extraction"
-        where 
-            nextScope = scope + 1
-            fromStmtList = map (smaugCreateSymbolTable' nextScope)
-
-smaugCreateSymbolTable :: BodyExpr -> [(Int, String)]
-smaugCreateSymbolTable = smaugCreateSymbolTable' 0
-
 -- Check semantic rules
 smaugCheckSemanticRules :: BodyExpr -> SemanticRuleStatus
 smaugCheckSemanticRules expr =
     case expr of
-        MainBody body -> checkRulesInList body
+        MainBody body -> checkRulesInList body &^ symbolTableRules expr
         IfExpr expr body -> checkExpr expr &^ checkRulesInList body
         WhileExpr expr body -> checkExpr expr &^ checkRulesInList body
         AssnExpr id expr -> checkExpr expr

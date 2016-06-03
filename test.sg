@@ -1,8 +1,10 @@
 main :: [
     let x = 0;
-    let y = 0;
-    if (x) [
-        let z = 0;
+    let omega = 1;
+    let y = omega;
+    
+    if (x) [ 
+        let z = omega;
         let v = 0;
         while (z) [
             let a = 0;
@@ -10,6 +12,6 @@ main :: [
         ]
         
         while (v) 
-            v = print(v);
+            v = console.log(v);
     ]
 ]

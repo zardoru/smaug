@@ -30,6 +30,9 @@ number = do
           r <- option "" decpart
           mspaces
           return (l ++ r)
+          
+isIdentifierChar :: Char -> Bool
+isIdentifierChar x = isAlphaNum x || x `elem` "._"
              
 identifier = 
        do
@@ -39,8 +42,8 @@ identifier =
            mspaces
            return (fc:rest)
        where
-           getFc = oneOf "_$@" <|> satisfy isAlpha
-           getRest = many $ satisfy isAlphaNum
+           getFc = oneOf "_" <|> satisfy isAlpha
+           getRest = many $ satisfy isIdentifierChar
 
 colons = lexeme "::"
 eq = lexeme "="
