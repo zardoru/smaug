@@ -26,7 +26,7 @@ andor      = cmpop `chainl1` ex2
 cmpop      = term `chainl1` ex3
 term       = top `chainl1` ex4
 
-parens     = do { lparen; expr <- expression; rparen; return expr }   
+parens     = do { lparen; expr <- expression; rparen; return $ Parens expr }   
 top        = try call <|> idOrNum <|> parens 
 
 {-

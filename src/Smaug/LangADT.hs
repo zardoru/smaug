@@ -17,6 +17,7 @@ data Expr =
     | Lit Double
     | QuoteStr String 
     | FunCallExpr String [Expr]
+    | Parens Expr
     | NullExpr
     deriving Show
     

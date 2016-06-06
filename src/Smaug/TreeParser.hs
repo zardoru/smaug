@@ -55,6 +55,7 @@ checkExpr (FunCallExpr id xps) = checkRulesForAllExprs xps
 checkExpr (Ident _) = Ok
 checkExpr (Lit _) = Ok
 checkExpr (QuoteStr _) = Ok
+checkExpr (Parens x) = checkExpr x
 checkExpr _ = error "Unimplemented expr check"
 
 checkRulesInList :: [BodyExpr] -> SemanticRuleStatus

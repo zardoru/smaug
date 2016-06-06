@@ -4,7 +4,7 @@ main :: [
     let y = omega;
     
     if (x) [ 
-        let z = omega;
+        let z = omega * (3 + 5);
         let v = 0;
         while (z) [
             let a = 0;

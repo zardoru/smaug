@@ -32,6 +32,7 @@ generateCodeEx (Lit d) = show d
 generateCodeEx (QuoteStr s) = "\"" ++ s ++ "\""
 generateCodeEx (FunCallExpr s x) = s ++ 
                     "(" ++ (intercalate "," $ map generateCodeEx x) ++ ")"
+generateCodeEx (Parens x) = "(" ++ generateCodeEx x ++ ")"
 generateCodeEx x = error $ "Unimplemented expr codegen path " ++ show x
 
 generateCode :: BodyExpr -> String
