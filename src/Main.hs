@@ -42,7 +42,7 @@ parseStmt = do
     putStr "smaug> "
     line <- getLine
     let out = smaugParseStmt line
-    print $ parseResult out
+    putStrLn $ parseResult out
    
 genCodeFromSmaugFile :: String -> String -> IO()
 genCodeFromSmaugFile x dst =
@@ -59,7 +59,7 @@ genStageTwo code dst =
     do
         putStrLn "Performing semantic check..."
         case smaugCheckSemanticRules code of
-            Ok -> genStageThree code dst
+            Ok -> putStrLn "Generating code... " >> genStageThree code dst
             (SemanticError err) -> hPutStrLn stderr $ "Semantic error: " ++ err
 
 genStageThree :: BodyExpr -> String -> IO()

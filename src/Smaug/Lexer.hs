@@ -60,6 +60,10 @@ mainRW = lexeme "main"
 whileRW = lexeme "while"
 ifRW = lexeme "if"
 forRW = lexeme "for"
+breakRW = lexeme "break"
+continueRW = lexeme "continue"
+returnRW = lexeme "return"
+elseRW = lexeme "else"
 
 {-
 add = lexeme "+"

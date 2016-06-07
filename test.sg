@@ -3,7 +3,7 @@ main :: [
     let omega = 1;
     let y = omega;
     
-    if (x) [ 
+    if x [ 
         let z = omega * (3 + 5);
         let v = 0;
         while (z) [
@@ -11,7 +11,12 @@ main :: [
             let x = 0;
         ]
         
-        while (v) 
+        for let w = z+v; 10; [
+            console.log(w);
+        ]
+
+        while v != z
             v = console.log(v);
+    ] else [
     ]
 ]

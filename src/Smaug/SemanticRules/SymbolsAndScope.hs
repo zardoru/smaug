@@ -15,11 +15,12 @@ smaugCreateSymbolTable' :: Scope -> BodyExpr -> SymList
 smaugCreateSymbolTable' scope expr =
     case expr of
         MainBody body -> concat $ fromStmtList body
-        IfExpr expr body -> concat $ fromStmtList body
+        IfExpr expr body ebody -> (concat $ fromStmtList body) ++ (concat $ fromStmtList ebody) 
         WhileExpr expr body -> concat $ fromStmtList body
         LetExpr id expr -> [(scope, id)]
         AssnExpr id expr -> []
-        BodyCallExpr expr -> []  
+        BodyCallExpr expr -> []
+        ForExpr id x ds st bd -> (scope, id) : (concat $ fromStmtList bd)
         _ -> error $ "Unimplemented statement for symbol extraction (" ++ show expr ++ ")"
         where 
             nextScope = scope + 1
@@ -82,6 +83,13 @@ checkLet ident t scope expr =
     where 
         ref = hasValidReferences t scope expr
 
+checkFor :: BodyExpr -> SymList -> Scope -> ErrorSeq
+checkFor (ForExpr id xp dst st lexpr) syms scope =
+    do
+        newsym <- checkLet id syms (scope+1) xp
+        allExprsHaveValidReferences newsym (scope+1) lexpr
+        return syms
+
 -- Genera un ErrorSeq a partir de una lista de símbolos
 -- o un error (Equivalente a return con un tipo correcto)
 wrap :: SymList -> SemanticRuleStatus -> ErrorSeq
@@ -104,14 +112,17 @@ validReferencesWalk scope symexpr syms =
         -- Usamos la lista de símbolos local (syms) para
         -- que cada bloque sea su propio ámbito en vez de
         -- hacer que cada nivel del árbol sea un ambito global a ese nivel.
-        (IfExpr expr lbexpr) -> do
-            allExprsHaveValidReferences syms nextScope lbexpr 
+        (IfExpr expr lbexpr elbexpr) -> do
+            allExprsHaveValidReferences syms nextScope lbexpr
+            allExprsHaveValidReferences syms nextScope elbexpr 
             wrap syms $ hasValidReferences syms scope expr
              
         (WhileExpr expr lbexpr) -> do
             allExprsHaveValidReferences syms nextScope lbexpr
             wrap syms $ hasValidReferences syms scope expr
-            
+
+        (ForExpr id xp dst st bd) -> checkFor symexpr syms nextScope 
+
         (AssnExpr id expr) -> wrap syms $ 
             isInScope id syms scope &^ hasValidReferences syms scope expr
         (LetExpr id expr) -> checkLet id syms scope expr

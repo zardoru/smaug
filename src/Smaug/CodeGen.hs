@@ -35,6 +35,23 @@ generateCodeEx (FunCallExpr s x) = s ++
 generateCodeEx (Parens x) = "(" ++ generateCodeEx x ++ ")"
 generateCodeEx x = error $ "Unimplemented expr codegen path " ++ show x
 
+genCodeIf (IfExpr xpr bxpr ebxpr) =
+    "if(" ++
+    generateCodeEx xpr ++ "){" ++
+    generateCode' bxpr ++ "}" ++
+    elseCode
+    where elseCode = case ebxpr of
+                        [] -> ""
+                        body -> "else{" ++ generateCode' ebxpr ++ "}"
+
+genCodeFor (ForExpr i xp ds st bd) =
+    "for(" ++ generateCode (LetExpr i xp)
+    ++ dstStmt
+    ++ stStmt
+    ++ "{" ++ generateCode' bd ++ "}"
+    where dstStmt = i ++ "!=" ++ show ds ++ ";"
+          stStmt = i ++ "+=" ++ show st ++ ")"
+
 generateCode :: BodyExpr -> String
 generateCode expr = 
     case expr of
@@ -44,9 +61,11 @@ generateCode expr =
         (WhileExpr xpr bxpr) -> "while(" ++ 
                                 generateCodeEx xpr ++ "){" ++ 
                                 generateCode' bxpr ++ "}"
-        (IfExpr xpr bxpr) -> "if(" ++
-                              generateCodeEx xpr ++ "){" ++
-                              generateCode' bxpr ++ "}"
+        (IfExpr xpr bxpr ebxpr) -> genCodeIf expr
+        (BreakStmt) -> "break;"
+        (ReturnStmt) -> "return;"
+        (ContinueStmt) -> "continue;"
+        (ForExpr i xp ds st bd) -> genCodeFor expr
         (BodyCallExpr xpr) -> generateCodeEx xpr ++ ";"
         _ -> error $ "Unimplemented codegen path " ++ show expr
 

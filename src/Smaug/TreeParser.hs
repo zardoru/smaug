@@ -72,9 +72,15 @@ smaugCheckSemanticRules :: BodyExpr -> SemanticRuleStatus
 smaugCheckSemanticRules expr =
     case expr of
         MainBody body -> checkRulesInList body &^ symbolTableRules expr
-        IfExpr expr body -> checkExpr expr &^ checkRulesInList body
+        IfExpr expr body elseBody -> checkExpr expr &^ checkRulesInList body &^ checkRulesInList elseBody
         WhileExpr expr body -> checkExpr expr &^ checkRulesInList body
         AssnExpr id expr -> checkExpr expr
         LetExpr id expr -> checkExpr expr
-        BodyCallExpr expr -> checkExpr expr  
+        ForExpr id xp dst st bd -> checkExpr xp &^ checkRulesInList bd
+        BodyCallExpr expr -> checkExpr expr
+        -- ¿Cómo comprobamos que estos tengan
+        -- un contexto válido?
+        BreakStmt -> Ok
+        ReturnStmt -> Ok
+        ContinueStmt -> Ok  
         _ -> error "Unimplemented semantic check"

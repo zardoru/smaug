@@ -27,7 +27,7 @@ cmpop      = term `chainl1` ex3
 term       = top `chainl1` ex4
 
 parens     = do { lparen; expr <- expression; rparen; return $ Parens expr }   
-top        = try call <|> idOrNum <|> parens 
+top        = try call <|> try idOrNum <|> parens 
 
 {-
     En orden de precedencia:
@@ -64,23 +64,22 @@ assnStmt = do
     semicolon
     return $ AssnExpr id expr
 
--- whileStmt := "while" '('expr')' body
+-- whileStmt := "while" '(' expr ')' body
 whileStmt = do
     whileRW
-    lparen
     expr <- expression
-    rparen
     bd <- bodyOrStmt
     return $ WhileExpr expr bd
     
--- ifStmt := "if" '('expr')' body
+-- ifStmt := "if" '(' expr ')' body
 ifStmt = do
     ifRW
-    lparen
     expr <- expression
-    rparen
     body <- bodyOrStmt
-    return $ IfExpr expr body
+    maybeElse <- optionMaybe (do {elseRW; bodyOrStmt})
+    case maybeElse of
+        Just elseBody -> return $ IfExpr expr body elseBody
+        Nothing -> return $ IfExpr expr body []
 
 -- maneja mas de 1 parametro mediante sepBy!
 -- paramList := expr (',' expr)*
@@ -100,11 +99,45 @@ callStmt = do
     semicolon
     return $ BodyCallExpr fcall 
 
--- stmt := letStmt | whileStmt | ifStmt | assnStmt | callStmt
+breakStmt = do
+    breakRW
+    semicolon
+    return BreakStmt
+
+returnStmt = do
+    returnRW
+    semicolon
+    return ReturnStmt
+
+continueStmt = do
+    continueRW
+    semicolon
+    return ContinueStmt
+
+forStmt = do
+    lexeme "for"
+    oparen <- option "" (lexeme "(") 
+    (LetExpr ident xpr) <- letStmt 
+    dest <- number
+    semicolon
+    step <- option "1" number
+    case oparen of 
+        "(" -> lexeme ")"
+        _ -> mspaces
+    bd <- bodyOrStmt
+    return $ ForExpr ident xpr (read dest) (read step) bd
+
+-- stmt := letStmt | whileStmt | ifStmt | 
+-- assnStmt | callStmt | breakStmt | 
+-- continueStmt | returnStmt
 stmt = do
     statement <- try letStmt <|> 
                  try whileStmt <|> 
-                 try ifStmt <|> 
+                 try ifStmt <|>
+                 try forStmt <|>
+                 try breakStmt <|>
+                 try returnStmt <|>
+                 try continueStmt <|>
                  try assnStmt <|>
                  callStmt
     return statement
@@ -120,7 +153,7 @@ stmtBody = do
     bd <- stmt 
     return [bd]
     
-bodyOrStmt = try body <|> stmtBody 
+bodyOrStmt = body <|> stmtBody 
 
 -- De acá obtenemos el arbol.
 {-

@@ -26,9 +26,12 @@ data BodyExpr =
     LetExpr String Expr
     | AssnExpr String Expr
     | WhileExpr Expr [BodyExpr]
-    | IfExpr Expr [BodyExpr]
-    | ForExpr String Double Double Double [BodyExpr]
+    | IfExpr Expr [BodyExpr] [BodyExpr]
+    | ForExpr String Expr Double Double [BodyExpr]
     | BodyCallExpr Expr
+    | BreakStmt
+    | ReturnStmt
+    | ContinueStmt
     | MainBody [BodyExpr]
     deriving Show
     
