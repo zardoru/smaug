@@ -53,17 +53,26 @@ rsbrace = lexeme "]"
 lparen = lexeme "("
 rparen = lexeme ")"
 
-letRW = lexeme "let"
-numRW = lexeme "num"
-strRW = lexeme "str"
-mainRW = lexeme "main"
-whileRW = lexeme "while"
-ifRW = lexeme "if"
-forRW = lexeme "for"
-breakRW = lexeme "break"
-continueRW = lexeme "continue"
-returnRW = lexeme "return"
-elseRW = lexeme "else"
+reqspaces = do
+    many1 $ satisfy (not . isAlpha) 
+
+reserved x = do
+    mspaces
+    lex <- string x
+    try $ lookAhead reqspaces
+    return lex 
+
+letRW = reserved "let"
+numRW = reserved "num"
+strRW = reserved "str"
+mainRW = reserved "main"
+whileRW = reserved "while"
+ifRW = reserved "if"
+forRW = reserved "for"
+breakRW = reserved "break"
+continueRW = reserved "continue"
+returnRW = reserved "return"
+elseRW = reserved "else"
 
 {-
 add = lexeme "+"

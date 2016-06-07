@@ -20,6 +20,9 @@ smaugCreateSymbolTable' scope expr =
         LetExpr id expr -> [(scope, id)]
         AssnExpr id expr -> []
         BodyCallExpr expr -> []
+        BreakStmt -> []
+        ContinueStmt -> []
+        ReturnStmt -> []
         ForExpr id x ds st bd -> (scope, id) : (concat $ fromStmtList bd)
         _ -> error $ "Unimplemented statement for symbol extraction (" ++ show expr ++ ")"
         where 

@@ -49,7 +49,7 @@ ex4 = (infixOp "*" Mul) <|> (infixOp "/" Div)
 
 -- letStmt := "let" id '=' expr ';'
 letStmt = do
-    letRW
+    try $ letRW
     id <- identifier
     eq
     expr <- expression
@@ -66,14 +66,14 @@ assnStmt = do
 
 -- whileStmt := "while" '(' expr ')' body
 whileStmt = do
-    whileRW
+    try $ whileRW
     expr <- expression
     bd <- bodyOrStmt
     return $ WhileExpr expr bd
     
 -- ifStmt := "if" '(' expr ')' body
 ifStmt = do
-    ifRW
+    try $ ifRW
     expr <- expression
     body <- bodyOrStmt
     maybeElse <- optionMaybe (do {elseRW; bodyOrStmt})
@@ -100,22 +100,22 @@ callStmt = do
     return $ BodyCallExpr fcall 
 
 breakStmt = do
-    breakRW
+    try $ breakRW
     semicolon
     return BreakStmt
 
 returnStmt = do
-    returnRW
+    try $ returnRW
     semicolon
     return ReturnStmt
 
 continueStmt = do
-    continueRW
+    try $ continueRW
     semicolon
     return ContinueStmt
 
 forStmt = do
-    lexeme "for"
+    try $ lexeme "for"
     oparen <- option "" (lexeme "(") 
     (LetExpr ident xpr) <- letStmt 
     dest <- number
@@ -131,15 +131,15 @@ forStmt = do
 -- assnStmt | callStmt | breakStmt | 
 -- continueStmt | returnStmt
 stmt = do
-    statement <- try letStmt <|> 
-                 try whileStmt <|> 
-                 try ifStmt <|>
-                 try forStmt <|>
-                 try breakStmt <|>
-                 try returnStmt <|>
-                 try continueStmt <|>
+    statement <- letStmt <|> 
+                 whileStmt <|> 
+                 ifStmt <|>
+                 forStmt <|>
+                 breakStmt <|>
+                 returnStmt <|>
+                 continueStmt <|>
                  try assnStmt <|>
-                 callStmt
+                 callStmt <?> "Expected statement."
     return statement
 
 -- body := '[' stmt* ']' | stmt 
@@ -153,7 +153,7 @@ stmtBody = do
     bd <- stmt 
     return [bd]
     
-bodyOrStmt = body <|> stmtBody 
+bodyOrStmt = body <|> stmtBody <?> "Expected body or statement."
 
 -- De acá obtenemos el arbol.
 {-

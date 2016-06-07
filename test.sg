@@ -6,7 +6,7 @@ main :: [
     if x [ 
         let z = omega * (3 + 5);
         let v = 0;
-        while (z) [
+        while z [
             let a = 0;
             let x = 0;
         ]
@@ -17,6 +17,5 @@ main :: [
 
         while v != z
             v = console.log(v);
-    ] else [
     ]
 ]
