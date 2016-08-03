@@ -1,5 +1,7 @@
 module Smaug.LangADT where
     
+-- ADT para árboles de expresión de Smaug
+
 data Expr =
     Add Expr Expr
     | Mul Expr Expr
@@ -27,7 +29,7 @@ data BodyExpr =
     | AssnExpr String Expr
     | WhileExpr Expr [BodyExpr]
     | IfExpr Expr [BodyExpr] [BodyExpr]
-    | ForExpr String Expr Double Double [BodyExpr]
+    | ForExpr String Expr Expr Expr [BodyExpr]
     | BodyCallExpr Expr
     | BreakStmt
     | ReturnStmt
@@ -69,6 +71,7 @@ getExprRight (And l r) = r
 getExprRight (Or l r) = r
 getExprRight _ = NullExpr
 
+-- Encadenamiento de reglas semánticas
 (&^) :: SemanticRuleStatus -> SemanticRuleStatus -> SemanticRuleStatus
 a &^ b = 
     case a of

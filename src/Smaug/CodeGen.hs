@@ -48,9 +48,12 @@ genCodeFor (ForExpr i xp ds st bd) =
     "for(" ++ generateCode (LetExpr i xp)
     ++ dstStmt
     ++ stStmt
-    ++ "{" ++ generateCode' bd ++ "}"
-    where dstStmt = i ++ "!=" ++ show ds ++ ";"
-          stStmt = i ++ "+=" ++ show st ++ ")"
+    ++ "){" ++ generateCode' bd ++ "}"
+    where dstStmt = generateCodeEx ds ++ ";"
+          stStmt = 
+              case st of 
+                  NullExpr -> i ++ "+=1"
+                  _ -> i ++ "+=" ++ generateCodeEx st 
 
 generateCode :: BodyExpr -> String
 generateCode expr = 

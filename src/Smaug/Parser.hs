@@ -21,6 +21,7 @@ smQuoteStr = do
     
 idOrNum    = try smId <|> smNum <|> smQuoteStr
 
+-- Agrupamiento por la izquierda de expresiones
 expression = andor `chainl1` ex1
 andor      = cmpop `chainl1` ex2
 cmpop      = term `chainl1` ex3
@@ -99,33 +100,39 @@ callStmt = do
     semicolon
     return $ BodyCallExpr fcall 
 
+-- "break;"
 breakStmt = do
     try $ breakRW
     semicolon
     return BreakStmt
 
+-- "return;"
 returnStmt = do
     try $ returnRW
     semicolon
     return ReturnStmt
 
+-- "continue;"
 continueStmt = do
     try $ continueRW
     semicolon
     return ContinueStmt
 
+-- forStmt := 'for' (for_paredo|for_header) body
+-- for_pareado := '(' for_header ')'
+-- for_header := letStmt ';' expr ';' (expr)?
 forStmt = do
     try $ lexeme "for"
     oparen <- option "" (lexeme "(") 
     (LetExpr ident xpr) <- letStmt 
-    dest <- number
+    dest <- expression
     semicolon
-    step <- option "1" number
+    step <- expression <|> (return NullExpr)
     case oparen of 
         "(" -> lexeme ")"
         _ -> mspaces
     bd <- bodyOrStmt
-    return $ ForExpr ident xpr (read dest) (read step) bd
+    return $ ForExpr ident xpr dest step bd
 
 -- stmt := letStmt | whileStmt | ifStmt | 
 -- assnStmt | callStmt | breakStmt | 

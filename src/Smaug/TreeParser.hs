@@ -56,7 +56,8 @@ checkExpr (Ident _) = Ok
 checkExpr (Lit _) = Ok
 checkExpr (QuoteStr _) = Ok
 checkExpr (Parens x) = checkExpr x
-checkExpr _ = error "Unimplemented expr check"
+checkExpr (NullExpr) = Ok
+checkExpr xp = error $ "Unimplemented expr check " ++ show xp 
 
 checkRulesInList :: [BodyExpr] -> SemanticRuleStatus
 checkRulesInList xprl = foldl' reduceFn startVal xprl
@@ -76,10 +77,11 @@ smaugCheckSemanticRules expr =
         WhileExpr expr body -> checkExpr expr &^ checkRulesInList body
         AssnExpr id expr -> checkExpr expr
         LetExpr id expr -> checkExpr expr
-        ForExpr id xp dst st bd -> checkExpr xp &^ checkRulesInList bd
+        ForExpr id xp dst st bd -> checkExpr xp &^ checkExpr dst &^ checkExpr st &^ checkRulesInList bd
         BodyCallExpr expr -> checkExpr expr
         -- ¿Cómo comprobamos que estos tengan
         -- un contexto válido?
+        -- Hay que ver si el ámbito padre hay algúna estructura de loop válida.
         BreakStmt -> Ok
         ReturnStmt -> Ok
         ContinueStmt -> Ok  

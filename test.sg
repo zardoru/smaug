@@ -1,21 +1,30 @@
 main :: [
-    let x = 0;
-    let omega = 1;
-    let y = omega;
-    
-    if x [ 
-        let z = omega * (3 + 5);
-        let v = 0;
-        while z [
-            let a = 0;
-            let x = 0;
-        ]
-        
-        for let w = z+v; 10; [
-            console.log(w);
-        ]
+    document.writeln("Aproximando 'e'...<br/>");
 
-        while v != z
-            v = console.log(v);
+    let e = 1;
+    let factorial = 1;
+
+    let iters = prompt("Cuantas iteraciones?");
+    for let i=1; i < iters; [
+        factorial = factorial * i;
+
+        let term = 1 / factorial;
+        e = e + term;
+        document.writeln(e, "<br/>");
+    ]
+
+    let v = 0;
+    while v < 10 
+    [
+        if v != 4
+            document.writeln(v, "<br/>");
+        v = v + 1;
+    ]
+
+    document.writeln("<br/>");
+
+    let pi = 3.1415;
+    for let w = 0; w < pi * 2; pi / 8 [
+        document.writeln(Math.sin(w), "<br/>");
     ]
 ]

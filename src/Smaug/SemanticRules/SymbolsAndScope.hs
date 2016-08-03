@@ -91,7 +91,8 @@ checkFor (ForExpr id xp dst st lexpr) syms scope =
     do
         newsym <- checkLet id syms (scope+1) xp
         allExprsHaveValidReferences newsym (scope+1) lexpr
-        return syms
+        let xpcheck = hasValidReferences newsym (scope + 1)
+        wrap syms $ xpcheck dst &^ xpcheck st
 
 -- Genera un ErrorSeq a partir de una lista de símbolos
 -- o un error (Equivalente a return con un tipo correcto)
@@ -124,7 +125,7 @@ validReferencesWalk scope symexpr syms =
             allExprsHaveValidReferences syms nextScope lbexpr
             wrap syms $ hasValidReferences syms scope expr
 
-        (ForExpr id xp dst st bd) -> checkFor symexpr syms nextScope 
+        (ForExpr id xp dst st bd) -> checkFor symexpr syms nextScope
 
         (AssnExpr id expr) -> wrap syms $ 
             isInScope id syms scope &^ hasValidReferences syms scope expr
